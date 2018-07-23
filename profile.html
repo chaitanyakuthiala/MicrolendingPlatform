@@ -1,0 +1,114 @@
+<html>
+<title>Micro Lending Platform</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<style>
+    body {
+        font-family: "Times New Roman", Georgia, Serif;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        font-family: "Playfair Display";
+        letter-spacing: 5px;
+    }
+</style>
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+<script src="js/common.js"></script>
+<body>
+
+    <!-- Navbar (sit on top) -->
+    <div class="w3-top">
+        <div class="w3-bar w3-white w3-padding w3-card" style="letter-spacing:4px;">
+            <h2>
+                <a href="index.html" class="w3-bar-item w3-button">Micro Lending Platform</a>
+            </h2>
+            <!-- Right-sided navbar links. Hide them on small screens -->
+            <div class="w3-right w3-hide-small menu-items">
+                <a href="alltransactions.html" class="w3-bar-item w3-button">All transactions</a>
+                <a href="lender.html" class="w3-bar-item w3-button">Fulfill Loan requests</a>
+                <a href="borrower.html" class="w3-bar-item w3-button">Your loan requests</a>
+                <a href="#" class="w3-bar-item w3-button">Profile details</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="w3-display-container w3-content w3-wide" style="max-width:1600px;min-width:500px" id="home">
+        <div class="w3-display-topleft w3-padding-large w3-opacity">
+            <br><br><br><br>
+            
+            <h4>Find your adhaar number seeded for this account along with your current rating and balance.</h4>
+        </div>
+    </header>
+    <br><br><br><br><br><br><br>
+    <h2>
+        Balance available
+    </h2>
+    <div id='balance'>
+
+    </div>
+    <h2>
+        Current rating
+    </h2>
+    <p>This rating is based upon your past loans to ensure that regular buyers who pay their dues timely are rewarded with more loans. Higher rating will ensure better chances of getting your loan approved.</p>
+    <div id="rating">
+
+    </div>
+    <h2>
+        Adhaar seeded with this account
+    </h2>
+    <div id="adhaar">
+        <form class="form-horizontal" hidden id="adhaarform">
+            <div class="form-group">
+                <label class="control-label col-sm-2" for="amount">Adhaar number:</label>
+                <div class="col-sm-2">
+                    <input type="number" class="form-control" id="adhaarinput">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <div class="col-sm-offset-2 col-sm-10">
+                    <button type="submit" class="btn btn-default" id="seedAdhaar">Click here</button> to seed your adhaar number.
+                </div>
+            </div>
+        </form>
+    </div>
+
+
+
+    <!-- Footer -->
+    <footer class="w3-center w3-light-grey w3-padding-32">
+        <p>Developed with love in India</p>
+    </footer>
+    <script>
+        $(document).ready(function () {
+            var currentdate = Date.parse(new Date());
+            // console.log(contractFunctions.buildreputationOfBorrower(web3.eth.accounts[0], currentdate, { from: web3.eth.accounts[0], gas: 900000 }));
+            $("#rating").text(contractFunctions.getRating(web3.eth.accounts[0]));
+            balance = web3.fromWei(web3.eth.getBalance(web3.eth.accounts[0]));
+            if(balance==0){
+                $("#balance").text("Please load up your wallet");
+            } else{
+                $("#balance").text(balance);
+            }
+            adhaar = contractFunctions.getAdhaar(web3.eth.accounts[0]);
+            if(adhaar==0) {
+                $("#adhaarform").show();
+            } else {
+                $("#adhaar").text(adhaar);
+            }
+            $("#seedAdhaar").click(function(){
+                var adhaarnum = $("#adhaarinput").val();
+                contractFunctions.addAdhaar(web3.eth.accounts[0], adhaarnum, { from: web3.eth.accounts[0], gas: 900000 });
+            })
+        });
+    </script>
+</body>
+
+</html>

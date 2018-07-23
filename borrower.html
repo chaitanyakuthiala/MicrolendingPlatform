@@ -1,0 +1,209 @@
+<html>
+<title>Micro Lending Platform</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<style>
+body {font-family: "Times New Roman", Georgia, Serif;}
+h1,h2,h3,h4,h5,h6 {
+    font-family: "Playfair Display";
+    letter-spacing: 5px;
+}
+</style>
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+<script src="js/common.js"></script>
+<body>
+
+    <!-- Navbar (sit on top) -->
+    <div class="w3-top">
+        <div class="w3-bar w3-white w3-padding w3-card" style="letter-spacing:4px;">
+            <h2>
+                <a href="index.html" class="w3-bar-item w3-button">Micro Lending Platform</a>
+            </h2>
+            <!-- Right-sided navbar links. Hide them on small screens -->
+            <div class="w3-right w3-hide-small menu-items">
+                <a href="alltransactions.html" class="w3-bar-item w3-button">All transactions</a>
+                <a href="lender.html" class="w3-bar-item w3-button">Fulfill Loan requests</a>
+                <a href="#" class="w3-bar-item w3-button">Your loan requests</a>
+                <a href="profile.html" class="w3-bar-item w3-button">Profile details</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="w3-display-container w3-content w3-wide" style="max-width:1600px;min-width:500px" id="home">
+        <div class="w3-display-topleft w3-padding-large w3-opacity">
+            <br><br><br><br>
+
+            <h4>Find all your past and current loan requests here. Find out the proposals received against your loan requests.</h4>
+        </div>
+    </header>
+        <br><br><br><br><br><br><br><br><br>
+        <button id="apply" class="btn-success">Apply for new loan</button><br><br>
+        <form class="form-horizontal" hidden id="newloanform">
+            <div class="form-group">
+                <label class="control-label col-sm-2" for="amount">Amount:</label>
+                <div class="col-sm-2">
+                    <input type="number" class="form-control" id="amount" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-sm-2" for="duedate">Due Date:</label>
+                <div class="col-sm-2">
+                    <input type="date" class="form-control" id="dueDate" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-sm-2" for="enddate">End Date:</label>
+                <div class="col-sm-2">
+                    <input type="date" class="form-control" id="endDate" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-offset-2 col-sm-10">
+                    <button type="submit" class="btn btn-default" id="newLoan">Submit</button>
+                </div>
+            </div>
+        </form>
+    <h2>
+        Your current and past loans
+    </h2>
+    <div>
+        <table id="loans">
+            <tr id="loanshead">
+                <th>Sno</th>
+                <th>Amount</th>
+                <th>Collected</th>
+                <th>Due date</th>
+                <th>Proposal Count</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Current State</th>
+                <th>Proposals</th>
+            </tr>
+        </table>
+    </div>
+    <br><br><br><br>
+
+    <!-- Footer -->
+    <footer class="w3-center w3-light-grey w3-padding-32">
+        <p>Developed with love in India</p>
+    </footer>
+    <script>
+        function solidityaccept(propid, loanid){
+            console.log(contractFunctions.acceptProposal(propid, loanid, { from: web3.eth.accounts[0], gas: 900000 }));
+            location.reload();
+        }
+        $(document).ready(function () {
+            console.log(web3);
+            $('#newLoan').click(function(){
+                var amount = $("#amount").val();
+                var duedate = Date.parse($("#dueDate").val());
+                var enddate = Date.parse($("#endDate").val());
+                var startdate = Date.parse(new Date());
+                amount = web3.toWei(amount, 'ether');
+                console.log(amount);
+                console.log(duedate);
+                console.log(enddate);
+                console.log(contractFunctions.newLoan(amount, duedate, enddate, startdate, { from: web3.eth.accounts[0], gas: 900000 }));
+            })
+            $('#apply').click(function(){
+                $("#newloanform").toggle();
+            })
+            totalLoans = contractFunctions.totalLoansBy(web3.eth.accounts[0]).valueOf();
+            console.log(totalLoans);
+            if(totalLoans > 0){
+                for(var i = 0 ; i<totalLoans ; i++){
+                    sno         = i+1;
+                    result      = contractFunctions.getLoanDetailsByAddressPosition(web3.eth.accounts[0],i);
+                    console.log(result);
+                    currentstate= LOANSTATE[result[0].valueOf()];
+                    duedate     = new Date(result[1]['c'][0]);
+                    amount      = result[2].valueOf()/wtoE;
+                    collected   = result[3].valueOf()/wtoE;
+                    proposalcount= result[4].valueOf();
+                    enddate     = new Date(result[5]['c'][0]);
+                    startdate   = new Date(result[6]['c'][0]);
+                    // console.log(result);
+                    var html = "<tr>" +
+                    "<td>" + sno + "</td>" +
+                    "<td>" + amount + "</td>" +
+                    "<td>" + collected + "</td>" +
+                    "<td>" + duedate + "</td>" +
+                    "<td>" + proposalcount + "</td>" +
+                    "<td>" + startdate + "</td>" +
+                    "<td>" + enddate + "</td>" +
+                    "<td>" + currentstate + "</td>" + 
+                    "<td>";
+                    if(currentstate == 'ACCEPTING'){
+                        html = html + "<button class = 'lockloan' id='" + i + "'>Lock loan</button>";
+                    }
+                    if(currentstate=='LOCKED'){
+                        html = html + "<button class = 'repayloan' id='" + i + "'>Repay loan</button>";
+                    }
+                    if(proposalcount>0){
+                        
+                        html = html + "<button class = 'viewproposals' id='" + i + "'>View proposals</button></td></tr>";
+                        $("#loans").append(html);
+                        var html = "<tr class='proposals_" + i +"' hidden>"+
+                            "<th>proposal id</th>"+
+                            "<th>Rate</th>"+
+                            "<th>Amount</th>"+
+                            "<th>State</th>"+
+                            "<th>Action</th>"+
+                            "</tr>";
+                        for(var j=0;j<proposalcount;j++) {
+                            result = contractFunctions.getProposalDetailsByLoanIdPosition(i,j);
+                            state = PROPOSALSTATE[result[0].valueOf()];
+                            rate = result[1].valueOf();
+                            amount = result[2].valueOf()/wtoE;
+                            html = html + "<tr class='proposals_" + i +"' hidden>"+
+                                "<td>"+j+"</td>"+
+                                "<td>"+rate+"</td>"+
+                                "<td>"+amount+"</td>"+
+                                "<td>"+state+"</td>";
+                            if(state == "WAITING"){
+                                html = html + "<td><button onclick='solidityaccept("+j+","+i+")'>Accept proposal</button></td>"+
+                                "</tr>";
+                            } else {
+                                html = html + "<td><button onclick='solidityaccept(" + j + "," + i+")' disabled>Accept proposal</button></td>" +
+                                    "</tr>";
+                            }
+                        }
+                        html = html+"</table>";
+                    } else {
+                        html = html + "<button class = 'viewproposals' id='" + i + "' disabled>View proposals</button></td></tr>";
+                    }
+                    // console.log(html);
+                    
+                    $("#loans").append(html);
+                }
+                $(".viewproposals").click(function(){
+                    var id = ".proposals_" + $(this).attr("id");
+                    $(id).toggle();
+                });
+                $(".lockloan").click(function () {
+                    var id = $(this).attr("id");
+                    console.log(contractFunctions.lockLoan(id, { from: web3.eth.accounts[0], gas: 900000 }));
+                    location.reload();
+                });
+                $(".repayloan").click(function () {
+                    var id = $(this).attr("id");
+                    var currentdate = Date.parse(new Date());
+                    result = contractFunctions.getRepayValue(id, currentdate);
+                    var amount = parseInt(result.valueOf()) + parseInt(web3.toWei(1, 'ether').valueOf());
+                    console.log(amount);
+                    contractFunctions.repayLoan(id, currentdate, { gas: 900000, from: web3.eth.accounts[0], value: amount });
+                    alert("LOAN REPAID SUCCESSFULLY");
+                    location.reload();
+                });
+            } else{
+                $("#loans").append("<tr><td colspan='8'>No loans asked yet. Go on and apply for new loan.</td></tr>");
+                $("#loanshead").hide();
+            }
+        });
+    </script>
+    </body>
+
+</html>

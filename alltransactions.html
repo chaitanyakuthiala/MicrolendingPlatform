@@ -1,0 +1,210 @@
+<html>
+<title>Micro Lending Platform</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<style>
+    body {
+        font-family: "Times New Roman", Georgia, Serif;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        font-family: "Playfair Display";
+        letter-spacing: 5px;
+    }
+</style>
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+<script src="js/common.js"></script>
+
+<body class="bg" style="padding-top: 0%; padding-left: 0% ;height: 75%; ">
+    <!-- Navbar (sit on top) -->
+    <div class="w3-top">
+        <div class="w3-bar w3-white w3-padding w3-card" style="letter-spacing:4px;">
+            <h2>
+                <a href="index.html" class="w3-bar-item w3-button">Micro Lending Platform</a>
+            </h2>
+            <!-- Right-sided navbar links. Hide them on small screens -->
+            <div class="w3-right w3-hide-small menu-items">
+                <a href="alltransactions.html" class="w3-bar-item w3-button">All transactions</a>
+                <a href="lender.html" class="w3-bar-item w3-button">Fulfill Loan requests</a>
+                <a href="borrower.html" class="w3-bar-item w3-button">Your loan requests</a>
+                <a href="profile.html" class="w3-bar-item w3-button">Profile details</a>
+            </div>
+        </div>
+    </div>
+    <header class="w3-display-container w3-content w3-wide" style="max-width:1600px;min-width:500px" id="home">
+        <div class="w3-display-topleft w3-padding-large w3-opacity">
+            <br>
+            <br>
+            <br>
+            <br>
+    
+            <h4>View details of all the people benefitting from this portal.</h4>
+        </div>
+    </header>
+    <br><br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <div style="width: 100%; padding-left: 2%" id ="qtrans">
+        <!-- get transaction by id -->
+        <span style="height: 5%">
+            <strong>
+                <font size="5%"> Get Transaction by Customer ID : </font>
+            </strong>
+        </span>
+        <input value="0x93E0fe795183A123F1b3605dd3dA0Ce9155D22D0" id="transID" style="height: 5%" type="text">
+        <button style="margin-left: 3%; margin-bottom: 3% " class="btn btn-primary" onclick="getTransaction('ID')">Go</button><!-- get transaction by range -->
+        <br>
+        <span style="height: 5%">
+            <strong>
+                <font size="5%"> Get Transaction by Loan ID : </font>
+            </strong>
+        </span>
+        <input placeholder="From" id="transRangeFrom" style="height: 5%; width: 10%" type="text">
+        <span>&nbsp;&nbsp;-&nbsp;&nbsp;</span>
+        <input placeholder="To" id="transRangeTo" style="height: 5%; width: 10%" type="text">
+        <button style="margin-left: 3%; margin-bottom: 3% " class="btn btn-primary" onclick="getTransaction('range')">Go</button>
+    </div>
+    <div id = "gtrans">
+        <table id = "looptrans" class="table" >
+            <tr id="loanshead">
+                <th>Amount</th>
+                <th>Collected</th>
+                <th>Due date</th>
+                <th>Proposal Count</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Current State</th>
+            </tr>
+        </table>
+    </div>
+    
+    <script>
+        // if (html.scrollWidth != 0) {
+        //     $('#html').css("height", html.scrollWidth - 450);
+        // }
+        var url_string = window.location.href;
+        var url = new URL(url_string);
+        var ID = url.searchParams.get("ID");
+        var from = url.searchParams.get("from");
+        var to = url.searchParams.get("to");
+
+        if (ID != null && ID != "") {
+            $('#transID').val(ID);
+            getTransaction2("ID");
+        }else if (from != null && to != null && from != "" && to != ""){
+            $('#transRangeTo').val(to);
+            $('#transRangeFrom').val(from);
+            getTransaction2("range");
+        }
+        function getTransaction(typ) {
+            if (typ == "ID") {
+                window.location = "alltransactions.html?ID="+ $('#transID').val();
+            }
+            if (typ == "range") {
+                window.location = "alltransactions.html?from="+ $('#transRangeFrom').val()+"&to="+ $('#transRangeTo').val();
+            }
+        }
+        function getTransaction2(type) {
+            if (type == "ID") {
+                contractFunctions.totalLoansBy($('#transID').val(), function (error, result) {
+                    if (error) {
+                        alert("Check Input!!");
+                        return null;
+                    }
+                    if (!error) {
+                        totalLoans = result.valueOf();
+                        if (totalLoans > 0) {
+                            for (var i = 0; i < totalLoans; i++) {
+                                var html;
+                                contractFunctions.getLoanDetailsByAddressPosition(web3.eth.accounts[0], i, function (error, result) {
+                                    console.log(result);
+                                    if (!error) {
+                                        currentstate = LOANSTATE[result[0].valueOf()];
+                                        duedate = new Date(result[1]['c'][0]);
+                                        amount = result[2].valueOf() / wtoE;
+                                        collected = result[3].valueOf() / wtoE;
+                                        proposalcount = result[4].valueOf();
+                                        enddate = new Date(result[5]['c'][0]);
+                                        startdate = new Date(result[6]['c'][0]);
+                                        html = "<tr>" +
+                                            "<td>" + amount + "</td>" +
+                                            "<td>" + collected + "</td>" +
+                                            "<td>" + duedate + "</td>" +
+                                            "<td>" + proposalcount + "</td>" +
+                                            "<td>" + startdate + "</td>" +
+                                            "<td>" + enddate + "</td>" +
+                                            "<td>" + currentstate + "</td>" ;
+                                        $("#looptrans").append(html);
+                                    }
+                                });
+                            }
+                        }else{
+                            alert("No Transaction's Available");
+                        }
+                    }
+
+                });
+            }else if (type == "range") {
+                var rangeTo = $("#transRangeTo").val();
+                var rangeFrom = $("#transRangeFrom").val();
+                if (rangeTo < rangeFrom || isNaN(rangeTo) || isNaN(rangeFrom)) {
+                    alert("Check Input!!");
+                    return null;
+                }
+                contractFunctions.numTotalLoans(function (error, res) {
+                    if (!error) {
+                        totalLoans = res.valueOf();
+
+                        if (totalLoans >= parseInt(rangeTo)) {
+                            for (var i = rangeFrom; i < rangeTo; i++) {
+                                contractFunctions.getloanlList(i, function (err, result) {
+                                    if (!err) {
+                                        result = result.valueOf();
+                                        console.log(result);
+                                        currentstate = LOANSTATE[result[0].valueOf()];
+                                        duedate = new Date(result[1]['c'][0]);
+                                        amount = result[2].valueOf() / wtoE;
+                                        collected = result[3].valueOf();
+                                        enddate = new Date(result[4]['c'][0]);
+                                        startdate = new Date(result[5]['c'][0]);
+                                        proposalcount = result[6].valueOf();
+                                        borrower = result[7];
+                                        sno = i + 1;
+                                        html = "<tr>" +
+                                            "<td>" + amount + "</td>" +
+                                            "<td>" + borrower + "</td>" +
+                                            "<td>" + duedate + "</td>" +
+                                            "<td>" + proposalcount + "</td>" +
+                                            "<td>" + startdate + "</td>" +
+                                            "<td>" + enddate + "</td>" +
+                                            "<td>" + currentstate + "</td>" +
+                                            "<td>";
+                                        $("#looptrans").append(html);
+                                    }else{
+                                        alert("No Transaction's Available");
+                                    }
+                                });
+                            }
+                        }else{
+                            alert("No Transaction's Available");
+                        }
+                    }
+                });   
+            }
+        }
+        
+
+    </script>
+</body>
+</html>
